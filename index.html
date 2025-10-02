@@ -167,11 +167,58 @@
             </div>
         </div>
 
-        <!-- Export Panel -->
+        <!-- JSON Editor Modal -->
+        <div id="jsonEditorModal" class="modal">
+            <div class="modal-content" style="max-width: 800px;">
+                <span class="close" onclick="closeJsonEditor()">&times;</span>
+                <h2><i class="fas fa-code"></i> Edit JSON Data</h2>
+                
+                <div class="json-editor-actions">
+                    <button class="btn btn-small" onclick="formatJson()">
+                        <i class="fas fa-align-left"></i> Format
+                    </button>
+                    <button class="btn btn-small" onclick="validateJson()">
+                        <i class="fas fa-check"></i> Validate
+                    </button>
+                    <button class="btn btn-small" onclick="loadCurrentData()">
+                        <i class="fas fa-sync"></i> Load Current
+                    </button>
+                    <button class="btn btn-small" onclick="copyJsonToClipboard()">
+                        <i class="fas fa-copy"></i> Copy JSON
+                    </button>
+                </div>
+                
+                <textarea id="jsonEditor" placeholder="Paste or edit your JSON data here..."></textarea>
+                
+                <div id="jsonError" class="json-error"></div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeJsonEditor()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveJsonData()">
+                        <i class="fas fa-save"></i> Save & Reload
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Management Panel -->
         <div class="export-panel">
-            <button class="btn btn-outline" id="exportBtn">
-                <i class="fas fa-download"></i> Export Data
-            </button>
+            <div class="button-group">
+                <button class="btn btn-outline" id="editJsonBtn">
+                    <i class="fas fa-edit"></i> Edit JSON
+                </button>
+                <button class="btn btn-outline" id="githubEditBtn">
+                    <i class="fab fa-github"></i> Edit on GitHub
+                </button>
+                <button class="btn btn-outline" id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i> Refresh Data
+                </button>
+            </div>
+            <div class="github-info">
+                <small>Data file: <code>data/conferences.json</code></small>
+                <br>
+                <small>Changes made here will persist in your browser until page refresh</small>
+            </div>
         </div>
 
         <!-- Footer with Logos -->

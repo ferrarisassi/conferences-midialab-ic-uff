@@ -1,4 +1,4 @@
-// Conference data storage with automatic persistence
+// Conference data storage
 let conferences = [];
 let editingIndex = -1;
 let currentFilters = {
@@ -9,8 +9,9 @@ let currentFilters = {
     showActive: true
 };
 
-// Storage key for localStorage
+// Storage keys
 const STORAGE_KEY = 'conference_manager_pro_data';
+const JSON_FILE_PATH = 'data/conferences.json';
 
 // DOM elements
 const modal = document.getElementById('conferenceModal');
@@ -25,15 +26,60 @@ const sortSelect = document.getElementById('sortSelect');
 const filterBtn = document.getElementById('filterBtn');
 const filterPanel = document.getElementById('filterPanel');
 const applyFilters = document.getElementById('applyFilters');
-const exportBtn = document.getElementById('exportBtn');
+const editJsonBtn = document.getElementById('editJsonBtn');
+const githubEditBtn = document.getElementById('githubEditBtn');
+const refreshBtn = document.getElementById('refreshBtn');
 
 // Stats elements
 const totalConferences = document.getElementById('totalConferences');
 const upcomingDeadlines = document.getElementById('upcomingDeadlines');
 const activeConferences = document.getElementById('activeConferences');
 
-// Load data from localStorage
-function loadData() {
+// Load data from JSON file or localStorage
+async function loadData() {
+    showNotification('Loading data...', 'info');
+    
+    // Try to load from JSON file first (GitHub Pages)
+    try {
+        await loadFromJSONFile();
+    } catch (error) {
+        console.log('Could not load from JSON file, using local data:', error);
+        // Fallback to localStorage
+        loadFromLocalStorage();
+    }
+    
+    updateStats();
+    renderConferences();
+}
+
+// Load from JSON file (GitHub Pages)
+async function loadFromJSONFile() {
+    try {
+        // For GitHub Pages, the path is relative to the repository root
+        const response = await fetch(JSON_FILE_PATH + '?t=' + new Date().getTime());
+        
+        if (!response.ok) {
+            throw new Error('JSON file not found');
+        }
+        
+        const data = await response.json();
+        
+        if (data && Array.isArray(data.conferences)) {
+            conferences = data.conferences;
+            // Also save to localStorage for fallback
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(conferences));
+            showNotification('Data loaded from repository!', 'success');
+        } else {
+            throw new Error('Invalid JSON structure');
+        }
+    } catch (error) {
+        console.error('Error loading from JSON file:', error);
+        throw error;
+    }
+}
+
+// Load from localStorage (fallback)
+function loadFromLocalStorage() {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
         try {
@@ -44,13 +90,9 @@ function loadData() {
         }
     }
     
-    // If no data exists, initialize with sample data
     if (conferences.length === 0) {
         initializeSampleData();
     }
-    
-    updateStats();
-    renderConferences();
 }
 
 // Save data to localStorage
@@ -70,6 +112,7 @@ function initializeSampleData() {
     
     conferences = [
         {
+            id: generateId(),
             name: "International Conference on Machine Learning",
             location: "Honolulu, Hawaii",
             website: "https://icml.cc",
@@ -79,9 +122,12 @@ function initializeSampleData() {
             conferenceStartDate: "2025-07-21",
             conferenceEndDate: "2025-07-27",
             status: "planned",
-            notes: "Premier conference on machine learning research. Planning to submit paper on neural architecture search."
+            notes: "Premier conference on machine learning research. Planning to submit paper on neural architecture search.",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
         },
         {
+            id: generateId(),
             name: "ACM SIGCHI Conference",
             location: "Paris, France",
             website: "https://chi2025.acm.org",
@@ -91,22 +137,17 @@ function initializeSampleData() {
             conferenceStartDate: "2025-09-10",
             conferenceEndDate: "2025-09-15",
             status: "submitted",
-            notes: "Human-Computer Interaction conference. Submitted paper on UX design patterns."
-        },
-        {
-            name: "NeurIPS 2025",
-            location: "Vancouver, Canada",
-            website: "https://neurips.cc",
-            category: "computer-science",
-            submissionDate: "2024-05-15",
-            notificationDate: "2024-09-15",
-            conferenceStartDate: "2025-12-10",
-            conferenceEndDate: "2025-12-16",
-            status: "accepted",
-            notes: "Paper accepted! Topic: Federated Learning Optimization"
+            notes: "Human-Computer Interaction conference. Submitted paper on UX design patterns.",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
         }
     ];
     saveData();
+}
+
+// Generate unique ID for conferences
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
 // Update statistics
@@ -237,7 +278,7 @@ function renderConferences() {
     }
 
     conferenceList.innerHTML = filteredConferences.map((conf, index) => {
-        const originalIndex = conferences.findIndex(c => c.name === conf.name && c.location === conf.location);
+        const originalIndex = conferences.findIndex(c => c.id === conf.id);
         const daysUntil = getDaysUntil(conf.submissionDate);
         const statusInfo = getStatusInfo(conf.status);
         const categoryName = getCategoryName(conf.category);
@@ -368,6 +409,7 @@ function handleFormSubmit(e) {
     e.preventDefault();
     
     const conferenceData = {
+        id: editingIndex === -1 ? generateId() : conferences[editingIndex].id,
         name: document.getElementById('confName').value.trim(),
         location: document.getElementById('confLocation').value.trim(),
         website: document.getElementById('confWebsite').value.trim(),
@@ -377,8 +419,16 @@ function handleFormSubmit(e) {
         conferenceStartDate: document.getElementById('conferenceStartDate').value,
         conferenceEndDate: document.getElementById('conferenceEndDate').value,
         status: document.getElementById('confStatus').value,
-        notes: document.getElementById('confNotes').value.trim()
+        notes: document.getElementById('confNotes').value.trim(),
+        updatedAt: new Date().toISOString()
     };
+    
+    // Add createdAt for new conferences
+    if (editingIndex === -1) {
+        conferenceData.createdAt = new Date().toISOString();
+    } else {
+        conferenceData.createdAt = conferences[editingIndex].createdAt;
+    }
     
     // Validate dates
     if (new Date(conferenceData.submissionDate) > new Date(conferenceData.notificationDate)) {
@@ -411,26 +461,129 @@ function handleFormSubmit(e) {
     closeModal();
 }
 
-// Export data
-function exportData() {
-    const dataStr = JSON.stringify(conferences, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+// JSON Editor Functions
+function openJsonEditor() {
+    const jsonEditorModal = document.getElementById('jsonEditorModal');
+    loadCurrentData();
+    jsonEditorModal.style.display = 'block';
+}
+
+function closeJsonEditor() {
+    const jsonEditorModal = document.getElementById('jsonEditorModal');
+    jsonEditorModal.style.display = 'none';
+}
+
+function loadCurrentData() {
+    const jsonData = {
+        version: "1.0",
+        lastUpdated: new Date().toISOString(),
+        conferences: conferences
+    };
     
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'conferences_backup.json';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    document.getElementById('jsonEditor').value = JSON.stringify(jsonData, null, 2);
+    hideJsonError();
+}
+
+function formatJson() {
+    const editor = document.getElementById('jsonEditor');
+    try {
+        const jsonData = JSON.parse(editor.value);
+        editor.value = JSON.stringify(jsonData, null, 2);
+        hideJsonError();
+        showNotification('JSON formatted successfully!', 'success');
+    } catch (error) {
+        showJsonError('Invalid JSON: ' + error.message);
+    }
+}
+
+function validateJson() {
+    const editor = document.getElementById('jsonEditor');
+    try {
+        const jsonData = JSON.parse(editor.value);
+        
+        if (!jsonData.conferences || !Array.isArray(jsonData.conferences)) {
+            showJsonError('JSON must have a "conferences" array');
+            return false;
+        }
+        
+        hideJsonError();
+        showNotification('JSON is valid!', 'success');
+        return true;
+    } catch (error) {
+        showJsonError('Invalid JSON: ' + error.message);
+        return false;
+    }
+}
+
+function saveJsonData() {
+    if (!validateJson()) return;
     
-    showNotification('Data exported successfully!', 'success');
+    const editor = document.getElementById('jsonEditor');
+    try {
+        const jsonData = JSON.parse(editor.value);
+        conferences = jsonData.conferences;
+        saveData();
+        renderConferences();
+        closeJsonEditor();
+        showNotification('Data updated successfully!', 'success');
+    } catch (error) {
+        showJsonError('Error saving data: ' + error.message);
+    }
+}
+
+function showJsonError(message) {
+    const errorDiv = document.getElementById('jsonError');
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+}
+
+function hideJsonError() {
+    const errorDiv = document.getElementById('jsonError');
+    errorDiv.style.display = 'none';
+}
+
+function copyJsonToClipboard() {
+    const editor = document.getElementById('jsonEditor');
+    navigator.clipboard.writeText(editor.value).then(() => {
+        showNotification('JSON copied to clipboard!', 'success');
+    }).catch(() => {
+        showNotification('Failed to copy JSON', 'error');
+    });
+}
+
+// GitHub Integration
+function openGitHubEditor() {
+    const repoInfo = getRepoInfo();
+    if (repoInfo) {
+        // Direct link to edit the file on GitHub
+        const editUrl = `https://github.com/${repoInfo.repo}/edit/main/data/conferences.json`;
+        window.open(editUrl, '_blank');
+    } else {
+        // Fallback for local development
+        showNotification('Go to your repository and edit data/conferences.json', 'info');
+    }
+}
+
+function getRepoInfo() {
+    const url = window.location.href;
+    const match = url.match(/https:\/\/([^\/]+)\/([^\/]+\/[^\/]+)/);
+    if (match) {
+        return {
+            host: match[1],
+            repo: match[2]
+        };
+    }
+    return null;
+}
+
+// Refresh data
+async function refreshData() {
+    showNotification('Refreshing data from repository...', 'info');
+    await loadData();
 }
 
 // Show notification
 function showNotification(message, type) {
-    // Remove existing notifications
     document.querySelectorAll('.notification').forEach(notif => notif.remove());
     
     const notification = document.createElement('div');
@@ -501,7 +654,9 @@ addBtn.addEventListener('click', openAddModal);
 closeBtn.addEventListener('click', closeModal);
 cancelBtn.addEventListener('click', closeModal);
 form.addEventListener('submit', handleFormSubmit);
-exportBtn.addEventListener('click', exportData);
+editJsonBtn.addEventListener('click', openJsonEditor);
+githubEditBtn.addEventListener('click', openGitHubEditor);
+refreshBtn.addEventListener('click', refreshData);
 
 // Search and filter events
 searchInput.addEventListener('input', (e) => {
@@ -526,10 +681,13 @@ applyFilters.addEventListener('click', () => {
     filterPanel.classList.remove('show');
 });
 
-// Close modal when clicking outside
+// Close modals when clicking outside
 window.addEventListener('click', (e) => {
     if (e.target === modal) {
         closeModal();
+    }
+    if (e.target === document.getElementById('jsonEditorModal')) {
+        closeJsonEditor();
     }
 });
 

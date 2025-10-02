@@ -30,7 +30,7 @@ body {
     margin: 0 auto;
 }
 
-/* Header with Logos - FIXED */
+/* Header with Logos */
 header {
     margin-bottom: 40px;
 }
@@ -578,9 +578,73 @@ header {
     grid-column: 1 / -1;
 }
 
+/* JSON Editor Styles */
+.json-editor-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+#jsonEditor {
+    width: 100%;
+    height: 400px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    padding: 15px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    resize: vertical;
+    background: #f8f9fa;
+    line-height: 1.4;
+}
+
+#jsonEditor:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.json-error {
+    color: var(--danger);
+    margin: 10px 0;
+    padding: 10px;
+    background: #ffebee;
+    border-radius: 6px;
+    border-left: 4px solid var(--danger);
+    display: none;
+}
+
+/* Data Management Panel */
 .export-panel {
     text-align: center;
-    margin-top: 30px;
+    margin-top: 40px;
+    padding: 25px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+}
+
+.button-group {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.github-info {
+    color: white;
+    opacity: 0.9;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.github-info code {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
 }
 
 /* Footer */
@@ -672,6 +736,15 @@ footer {
     .footer-logo-img {
         max-height: 40px;
     }
+    
+    .button-group {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .button-group .btn {
+        width: 200px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -699,5 +772,13 @@ footer {
     .footer-logos {
         flex-direction: column;
         gap: 15px;
+    }
+    
+    .json-editor-actions {
+        flex-direction: column;
+    }
+    
+    .json-editor-actions .btn {
+        width: 100%;
     }
 }
