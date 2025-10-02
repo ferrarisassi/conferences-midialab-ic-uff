@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "lastUpdated": "2025-10-02T10:10:22.076Z",
+  "lastUpdated": "2025-10-02T15:13:22.582Z",
   "conferences": [
     {
       "name": "SeGAH 2026",
@@ -13,6 +13,21 @@
       "conferenceEndDate": "2026-07-31",
       "status": "planned",
       "notes": ""
+    },
+    {
+      "id": "mg9k0r329pkygn93beh",
+      "name": "IMX 2026",
+      "location": "Athlone, Ireland",
+      "website": "https://imx.acm.org/2026",
+      "category": "computer-science",
+      "submissionDate": "",
+      "notificationDate": "",
+      "conferenceStartDate": "2026-06-09",
+      "conferenceEndDate": "2026-06-11",
+      "status": "planned",
+      "notes": "",
+      "updatedAt": "2025-10-02T15:12:30.494Z",
+      "createdAt": "2025-10-02T15:12:30.494Z"
     }
   ]
 }

@@ -128,16 +128,31 @@ function initializeSampleData() {
         },
         {
             id: generateId(),
-            name: "ACM SIGCHI Conference",
-            location: "Paris, France",
-            website: "https://chi2025.acm.org",
+            name: "Future Tech Conference 2025",
+            location: "San Francisco, USA",
+            website: "https://futuretech2025.org",
             category: "computer-science",
-            submissionDate: "2025-02-15",
-            notificationDate: "2025-05-01",
-            conferenceStartDate: "2025-09-10",
-            conferenceEndDate: "2025-09-15",
-            status: "submitted",
-            notes: "Human-Computer Interaction conference. Submitted paper on UX design patterns.",
+            submissionDate: "",
+            notificationDate: "2025-06-01",
+            conferenceStartDate: "2025-10-15",
+            conferenceEndDate: "2025-10-17",
+            status: "planned",
+            notes: "Waiting for submission deadline announcement",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        },
+        {
+            id: generateId(),
+            name: "Conference with No Dates Yet",
+            location: "Virtual",
+            website: "",
+            category: "computer-science",
+            submissionDate: "",
+            notificationDate: "",
+            conferenceStartDate: "",
+            conferenceEndDate: "",
+            status: "planned",
+            notes: "Dates to be announced",
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         }
@@ -156,6 +171,7 @@ function updateStats() {
     
     const today = new Date();
     const upcomingCount = conferences.filter(conf => {
+        if (!conf.submissionDate) return false;
         const submissionDate = new Date(conf.submissionDate);
         return submissionDate >= today;
     }).length;
@@ -171,12 +187,17 @@ function updateStats() {
 
 // Format date for display
 function formatDate(dateString) {
+    if (!dateString) return 'Not specified';
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString('en-US', options);
 }
 
 // Calculate days until date
 function getDaysUntil(dateString) {
+    if (!dateString) {
+        return { text: 'Not specified', urgent: false };
+    }
+    
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const targetDate = new Date(dateString);
@@ -229,12 +250,22 @@ function getFilteredConferences() {
         if (!matchesSearch) return false;
         
         // Status filters
-        const submissionDate = new Date(conf.submissionDate);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
-        const isUpcoming = submissionDate >= today;
-        const isPast = submissionDate < today;
+        let isUpcoming = false;
+        let isPast = false;
+        
+        if (conf.submissionDate) {
+            const submissionDate = new Date(conf.submissionDate);
+            isUpcoming = submissionDate >= today;
+            isPast = submissionDate < today;
+        } else {
+            // If no submission date, don't include in upcoming/past filters
+            isUpcoming = false;
+            isPast = false;
+        }
+        
         const isActive = conf.status === 'submitted' || conf.status === 'accepted';
         
         if (isUpcoming && !currentFilters.showUpcoming) return false;
@@ -244,12 +275,20 @@ function getFilteredConferences() {
         return true;
     });
     
-    // Sort conferences
+    // Sort conferences (handle empty dates)
     filtered.sort((a, b) => {
         switch (currentFilters.sortBy) {
             case 'submissionDate':
+                // Put conferences without submission dates at the end
+                if (!a.submissionDate && !b.submissionDate) return 0;
+                if (!a.submissionDate) return 1;
+                if (!b.submissionDate) return -1;
                 return new Date(a.submissionDate) - new Date(b.submissionDate);
             case 'conferenceStartDate':
+                // Put conferences without start dates at the end
+                if (!a.conferenceStartDate && !b.conferenceStartDate) return 0;
+                if (!a.conferenceStartDate) return 1;
+                if (!b.conferenceStartDate) return -1;
                 return new Date(a.conferenceStartDate) - new Date(b.conferenceStartDate);
             case 'location':
                 return a.location.localeCompare(b.location);
@@ -279,12 +318,17 @@ function renderConferences() {
 
     conferenceList.innerHTML = filteredConferences.map((conf, index) => {
         const originalIndex = conferences.findIndex(c => c.id === conf.id);
-        const daysUntil = getDaysUntil(conf.submissionDate);
+        const submissionDaysUntil = getDaysUntil(conf.submissionDate);
+        const notificationDaysUntil = getDaysUntil(conf.notificationDate);
         const statusInfo = getStatusInfo(conf.status);
         const categoryName = getCategoryName(conf.category);
         
+        const hasSubmissionDate = conf.submissionDate && conf.submissionDate !== '';
+        const hasNotificationDate = conf.notificationDate && conf.notificationDate !== '';
+        const hasConferenceDates = conf.conferenceStartDate && conf.conferenceStartDate !== '';
+        
         return `
-            <div class="conference-card ${daysUntil.urgent ? 'urgent' : ''} ${daysUntil.text === 'Past' ? '' : 'upcoming'}">
+            <div class="conference-card ${submissionDaysUntil.urgent && hasSubmissionDate ? 'urgent' : ''} ${(submissionDaysUntil.text === 'Past' || !hasSubmissionDate) ? '' : 'upcoming'}">
                 <h3>${conf.name}</h3>
                 
                 <div class="conference-meta">
@@ -309,22 +353,24 @@ function renderConferences() {
                         <span class="date-label">
                             <i class="fas fa-paper-plane"></i> Submission:
                         </span>
-                        <span class="date-value ${daysUntil.urgent ? 'date-urgent' : ''}">
-                            ${formatDate(conf.submissionDate)} (${daysUntil.text})
+                        <span class="date-value ${hasSubmissionDate ? (submissionDaysUntil.urgent ? 'date-urgent' : '') : 'no-date-text'}">
+                            ${hasSubmissionDate ? formatDate(conf.submissionDate) + ' (' + submissionDaysUntil.text + ')' : 'Not specified'}
                         </span>
                     </div>
                     <div class="date-item">
                         <span class="date-label">
                             <i class="fas fa-bell"></i> Notification:
                         </span>
-                        <span class="date-value">${formatDate(conf.notificationDate)}</span>
+                        <span class="date-value ${hasNotificationDate ? '' : 'no-date-text'}">
+                            ${hasNotificationDate ? formatDate(conf.notificationDate) : 'Not specified'}
+                        </span>
                     </div>
                     <div class="date-item">
                         <span class="date-label">
                             <i class="fas fa-calendar-day"></i> Conference:
                         </span>
-                        <span class="date-value">
-                            ${formatDate(conf.conferenceStartDate)} - ${formatDate(conf.conferenceEndDate)}
+                        <span class="date-value ${hasConferenceDates ? '' : 'no-date-text'}">
+                            ${hasConferenceDates ? formatDate(conf.conferenceStartDate) + ' - ' + formatDate(conf.conferenceEndDate) : 'Not specified'}
                         </span>
                     </div>
                 </div>
@@ -354,12 +400,8 @@ function openAddModal() {
     modalTitle.innerHTML = '<i class="fas fa-calendar-plus"></i> Add New Conference';
     form.reset();
     
-    // Set default dates
-    const today = new Date();
-    const defaultSubmission = new Date(today);
-    defaultSubmission.setDate(today.getDate() + 30);
-    
-    document.getElementById('submissionDate').value = defaultSubmission.toISOString().split('T')[0];
+    // Clear all date fields for new conference
+    document.getElementById('submissionDate').value = '';
     document.getElementById('notificationDate').value = '';
     document.getElementById('conferenceStartDate').value = '';
     document.getElementById('conferenceEndDate').value = '';
@@ -377,10 +419,10 @@ function editConference(index) {
     document.getElementById('confLocation').value = conf.location;
     document.getElementById('confWebsite').value = conf.website || '';
     document.getElementById('confCategory').value = conf.category || '';
-    document.getElementById('submissionDate').value = conf.submissionDate;
-    document.getElementById('notificationDate').value = conf.notificationDate;
-    document.getElementById('conferenceStartDate').value = conf.conferenceStartDate;
-    document.getElementById('conferenceEndDate').value = conf.conferenceEndDate;
+    document.getElementById('submissionDate').value = conf.submissionDate || '';
+    document.getElementById('notificationDate').value = conf.notificationDate || '';
+    document.getElementById('conferenceStartDate').value = conf.conferenceStartDate || '';
+    document.getElementById('conferenceEndDate').value = conf.conferenceEndDate || '';
     document.getElementById('confStatus').value = conf.status || 'planned';
     document.getElementById('confNotes').value = conf.notes || '';
     
@@ -414,10 +456,10 @@ function handleFormSubmit(e) {
         location: document.getElementById('confLocation').value.trim(),
         website: document.getElementById('confWebsite').value.trim(),
         category: document.getElementById('confCategory').value,
-        submissionDate: document.getElementById('submissionDate').value,
-        notificationDate: document.getElementById('notificationDate').value,
-        conferenceStartDate: document.getElementById('conferenceStartDate').value,
-        conferenceEndDate: document.getElementById('conferenceEndDate').value,
+        submissionDate: document.getElementById('submissionDate').value || '',
+        notificationDate: document.getElementById('notificationDate').value || '',
+        conferenceStartDate: document.getElementById('conferenceStartDate').value || '',
+        conferenceEndDate: document.getElementById('conferenceEndDate').value || '',
         status: document.getElementById('confStatus').value,
         notes: document.getElementById('confNotes').value.trim(),
         updatedAt: new Date().toISOString()
@@ -430,20 +472,26 @@ function handleFormSubmit(e) {
         conferenceData.createdAt = conferences[editingIndex].createdAt;
     }
     
-    // Validate dates
-    if (new Date(conferenceData.submissionDate) > new Date(conferenceData.notificationDate)) {
-        showNotification('Submission deadline must be before notification date!', 'error');
-        return;
+    // Validate dates only if they are provided
+    if (conferenceData.submissionDate && conferenceData.notificationDate) {
+        if (new Date(conferenceData.submissionDate) > new Date(conferenceData.notificationDate)) {
+            showNotification('Submission deadline must be before notification date!', 'error');
+            return;
+        }
     }
     
-    if (new Date(conferenceData.notificationDate) > new Date(conferenceData.conferenceStartDate)) {
-        showNotification('Notification date must be before conference start date!', 'error');
-        return;
+    if (conferenceData.notificationDate && conferenceData.conferenceStartDate) {
+        if (new Date(conferenceData.notificationDate) > new Date(conferenceData.conferenceStartDate)) {
+            showNotification('Notification date must be before conference start date!', 'error');
+            return;
+        }
     }
     
-    if (new Date(conferenceData.conferenceStartDate) > new Date(conferenceData.conferenceEndDate)) {
-        showNotification('Conference start date must be before end date!', 'error');
-        return;
+    if (conferenceData.conferenceStartDate && conferenceData.conferenceEndDate) {
+        if (new Date(conferenceData.conferenceStartDate) > new Date(conferenceData.conferenceEndDate)) {
+            showNotification('Conference start date must be before end date!', 'error');
+            return;
+        }
     }
     
     if (editingIndex === -1) {
