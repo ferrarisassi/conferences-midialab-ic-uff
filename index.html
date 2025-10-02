@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conference Manager Pro</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-calendar-alt"></i> Conference Manager Pro</h1>
+            <p>Organize, track, and manage your academic conferences</p>
+        </header>
+
+        <!-- Stats Dashboard -->
+        <div class="stats-dashboard">
+            <div class="stat-card">
+                <div class="stat-number" id="totalConferences">0</div>
+                <div class="stat-label">Total Conferences</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="upcomingDeadlines">0</div>
+                <div class="stat-label">Upcoming Deadlines</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="activeConferences">0</div>
+                <div class="stat-label">Active Conferences</div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <button class="btn btn-primary" id="addConferenceBtn">
+                <i class="fas fa-plus"></i> Add New Conference
+            </button>
+            
+            <div class="search-sort">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Search conferences...">
+                </div>
+                <select id="sortSelect" class="sort-select">
+                    <option value="name">Sort by Name</option>
+                    <option value="submissionDate">Sort by Submission Date</option>
+                    <option value="conferenceStartDate">Sort by Conference Date</option>
+                    <option value="location">Sort by Location</option>
+                </select>
+                <button class="btn btn-secondary" id="filterBtn">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Panel -->
+        <div id="filterPanel" class="filter-panel">
+            <div class="filter-options">
+                <label>
+                    <input type="checkbox" id="filterUpcoming" checked> Upcoming Deadlines
+                </label>
+                <label>
+                    <input type="checkbox" id="filterPast" checked> Past Conferences
+                </label>
+                <label>
+                    <input type="checkbox" id="filterActive" checked> Active Conferences
+                </label>
+            </div>
+            <button class="btn btn-small" id="applyFilters">Apply Filters</button>
+        </div>
+
+        <!-- Conference List -->
+        <div id="conferenceList" class="conference-list"></div>
+
+        <!-- Modal for Add/Edit Conference -->
+        <div id="conferenceModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2 id="modalTitle"><i class="fas fa-calendar-plus"></i> Add New Conference</h2>
+                <form id="conferenceForm">
+                    <div class="form-group">
+                        <label for="confName">Conference Name*</label>
+                        <input type="text" id="confName" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confLocation">Location*</label>
+                        <input type="text" id="confLocation" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confWebsite">Website</label>
+                        <input type="url" id="confWebsite" placeholder="https://example.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confCategory">Category</label>
+                        <select id="confCategory">
+                            <option value="">Select Category</option>
+                            <option value="computer-science">Computer Science</option>
+                            <option value="engineering">Engineering</option>
+                            <option value="medicine">Medicine</option>
+                            <option value="business">Business</option>
+                            <option value="social-sciences">Social Sciences</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="submissionDate">Submission Deadline*</label>
+                            <input type="date" id="submissionDate" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="notificationDate">Notification Date*</label>
+                            <input type="date" id="notificationDate" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="conferenceStartDate">Conference Start*</label>
+                            <input type="date" id="conferenceStartDate" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="conferenceEndDate">Conference End*</label>
+                            <input type="date" id="conferenceEndDate" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confStatus">Status</label>
+                        <select id="confStatus">
+                            <option value="planned">Planned</option>
+                            <option value="submitted">Submitted</option>
+                            <option value="accepted">Accepted</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="attended">Attended</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confNotes">Notes</label>
+                        <textarea id="confNotes" rows="3" placeholder="Add any additional notes..."></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Conference
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Export Panel -->
+        <div class="export-panel">
+            <button class="btn btn-outline" id="exportBtn">
+                <i class="fas fa-download"></i> Export Data
+            </button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
