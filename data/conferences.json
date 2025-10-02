@@ -1,5 +1,18 @@
 {
   "version": "1.0",
-  "lastUpdated": "2024-01-01T00:00:00.000Z",
-  "conferences": []
+  "lastUpdated": "2025-10-02T10:10:22.076Z",
+  "conferences": [
+    {
+      "name": "SeGAH 2026",
+      "location": "Rio de Janeiro, Brazil",
+      "website": "https://www.segah.org/2026",
+      "category": "computer-science",
+      "submissionDate": "2026-01-30",
+      "notificationDate": "2026-02-27",
+      "conferenceStartDate": "2026-07-29",
+      "conferenceEndDate": "2026-07-31",
+      "status": "planned",
+      "notes": ""
+    }
+  ]
 }
