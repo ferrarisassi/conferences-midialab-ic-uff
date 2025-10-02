@@ -35,31 +35,42 @@ const totalConferences = document.getElementById('totalConferences');
 const upcomingDeadlines = document.getElementById('upcomingDeadlines');
 const activeConferences = document.getElementById('activeConferences');
 
+// Track if we've loaded data to prevent multiple loads
+let dataLoaded = false;
+
 // Load data from JSON file or localStorage
 async function loadData() {
+    if (dataLoaded) {
+        console.log('Data already loaded, skipping...');
+        return;
+    }
+    
     showNotification('Loading data...', 'info');
     
-    // Try to load from JSON file first (GitHub Pages)
+    // Always try to load from JSON file first
     try {
         await loadFromJSONFile();
+        dataLoaded = true;
     } catch (error) {
         console.log('Could not load from JSON file, using local data:', error);
         // Fallback to localStorage
         loadFromLocalStorage();
+        dataLoaded = true;
     }
     
     updateStats();
     renderConferences();
 }
 
-// Load from JSON file (GitHub Pages)
+// Load from JSON file (GitHub Pages) - ALWAYS try this first
 async function loadFromJSONFile() {
     try {
         // For GitHub Pages, the path is relative to the repository root
+        // Add cache busting to ensure fresh data
         const response = await fetch(JSON_FILE_PATH + '?t=' + new Date().getTime());
         
         if (!response.ok) {
-            throw new Error('JSON file not found');
+            throw new Error(`JSON file not found: ${response.status} ${response.statusText}`);
         }
         
         const data = await response.json();
@@ -68,9 +79,10 @@ async function loadFromJSONFile() {
             conferences = data.conferences;
             // Also save to localStorage for fallback
             localStorage.setItem(STORAGE_KEY, JSON.stringify(conferences));
-            showNotification('Data loaded from repository!', 'success');
+            console.log('Data successfully loaded from JSON file:', conferences.length, 'conferences');
+            showNotification(`Data loaded from repository! (${conferences.length} conferences)`, 'success');
         } else {
-            throw new Error('Invalid JSON structure');
+            throw new Error('Invalid JSON structure: missing conferences array');
         }
     } catch (error) {
         console.error('Error loading from JSON file:', error);
@@ -84,14 +96,20 @@ function loadFromLocalStorage() {
     if (stored) {
         try {
             conferences = JSON.parse(stored);
+            console.log('Data loaded from localStorage:', conferences.length, 'conferences');
+            showNotification(`Data loaded from browser storage (${conferences.length} conferences)`, 'info');
         } catch (e) {
-            console.error('Error loading data:', e);
+            console.error('Error loading data from localStorage:', e);
             conferences = [];
+            showNotification('Error loading saved data', 'error');
         }
+    } else {
+        console.log('No data found in localStorage');
     }
     
     if (conferences.length === 0) {
         initializeSampleData();
+        showNotification('Initialized with sample data', 'info');
     }
 }
 
@@ -319,7 +337,6 @@ function renderConferences() {
     conferenceList.innerHTML = filteredConferences.map((conf, index) => {
         const originalIndex = conferences.findIndex(c => c.id === conf.id);
         const submissionDaysUntil = getDaysUntil(conf.submissionDate);
-        const notificationDaysUntil = getDaysUntil(conf.notificationDate);
         const statusInfo = getStatusInfo(conf.status);
         const categoryName = getCategoryName(conf.category);
         
@@ -624,9 +641,16 @@ function getRepoInfo() {
     return null;
 }
 
-// Refresh data
+// Refresh data - Force reload from JSON file
 async function refreshData() {
     showNotification('Refreshing data from repository...', 'info');
+    dataLoaded = false; // Reset the flag to force reload
+    await loadData();
+}
+
+// Force reload data from JSON file (call this on page load)
+async function forceReloadFromJSON() {
+    dataLoaded = false;
     await loadData();
 }
 
@@ -703,7 +727,6 @@ closeBtn.addEventListener('click', closeModal);
 cancelBtn.addEventListener('click', closeModal);
 form.addEventListener('submit', handleFormSubmit);
 editJsonBtn.addEventListener('click', openJsonEditor);
-githubEditBtn.addEventListener('click', openGitHubEditor);
 refreshBtn.addEventListener('click', refreshData);
 
 // Search and filter events
@@ -739,5 +762,5 @@ window.addEventListener('click', (e) => {
     }
 });
 
-// Initialize the app
-loadData();
+// Initialize the app - Force reload from JSON on every page load
+forceReloadFromJSON();
