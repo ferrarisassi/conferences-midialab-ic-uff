@@ -246,10 +246,6 @@ function getStatusInfo(status) {
 function getCategoryName(category) {
     const categoryMap = {
         'computer-science': 'Computer Science',
-        'engineering': 'Engineering',
-        'medicine': 'Medicine',
-        'business': 'Business',
-        'social-sciences': 'Social Sciences',
         'other': 'Other'
     };
     return categoryMap[category] || category;
