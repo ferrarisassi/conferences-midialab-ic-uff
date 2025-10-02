@@ -127,54 +127,6 @@ function initializeSampleData() {
     
     const nextMonth = new Date(today);
     nextMonth.setMonth(today.getMonth() + 1);
-    
-    conferences = [
-        {
-            id: generateId(),
-            name: "International Conference on Machine Learning",
-            location: "Honolulu, Hawaii",
-            website: "https://icml.cc",
-            category: "computer-science",
-            submissionDate: nextWeek.toISOString().split('T')[0],
-            notificationDate: "2025-04-15",
-            conferenceStartDate: "2025-07-21",
-            conferenceEndDate: "2025-07-27",
-            status: "planned",
-            notes: "Premier conference on machine learning research. Planning to submit paper on neural architecture search.",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        },
-        {
-            id: generateId(),
-            name: "Future Tech Conference 2025",
-            location: "San Francisco, USA",
-            website: "https://futuretech2025.org",
-            category: "computer-science",
-            submissionDate: "",
-            notificationDate: "2025-06-01",
-            conferenceStartDate: "2025-10-15",
-            conferenceEndDate: "2025-10-17",
-            status: "planned",
-            notes: "Waiting for submission deadline announcement",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        },
-        {
-            id: generateId(),
-            name: "Conference with No Dates Yet",
-            location: "Virtual",
-            website: "",
-            category: "computer-science",
-            submissionDate: "",
-            notificationDate: "",
-            conferenceStartDate: "",
-            conferenceEndDate: "",
-            status: "planned",
-            notes: "Dates to be announced",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        }
-    ];
     saveData();
 }
 
