@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "lastUpdated": "2025-10-02T16:58:25.277Z",
+  "lastUpdated": "2025-10-06T13:40:02.138Z",
   "conferences": [
     {
       "name": "SeGAH 2026",
@@ -43,6 +43,23 @@
       "notes": "",
       "updatedAt": "2025-10-02T16:58:13.142Z",
       "createdAt": "2025-10-02T16:58:13.142Z"
+    },
+    {
+      "id": "mgf6h26tdp9uak8nyom",
+      "name": "SVR – Symposium on Virtual and Augmented Reality 2025",
+      "location": "Salvador, BA, Brasil",
+      "website": "https://svr.sbc.org.br/2025/",
+      "categories": [
+        "virtual-reality"
+      ],
+      "submissionDate": "2025-06-23",
+      "notificationDate": "2025-07-21",
+      "conferenceStartDate": "2025-09-30",
+      "conferenceEndDate": "2025-10-03",
+      "status": "attended",
+      "notes": "",
+      "updatedAt": "2025-10-06T13:40:00.374Z",
+      "createdAt": "2025-10-06T13:39:53.813Z"
     }
   ]
 }
