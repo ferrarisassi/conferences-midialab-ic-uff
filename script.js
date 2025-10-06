@@ -267,7 +267,7 @@ function getFilteredConferences() {
     return filtered;
 }
 
-// Render all conferences
+// Update the renderConferences function to show multiple categories
 function renderConferences() {
     const filteredConferences = getFilteredConferences();
     
@@ -286,7 +286,12 @@ function renderConferences() {
         const originalIndex = conferences.findIndex(c => c.id === conf.id);
         const submissionDaysUntil = getDaysUntil(conf.submissionDate);
         const statusInfo = getStatusInfo(conf.status);
-        const categoryName = getCategoryName(conf.category);
+        
+        // Get categories - support both old and new format
+        const confCategories = conf.categories && Array.isArray(conf.categories) 
+            ? conf.categories 
+            : (conf.category ? [conf.category] : []);
+        const categoryNames = getCategoryNames(confCategories);
         
         const hasSubmissionDate = conf.submissionDate && conf.submissionDate !== '';
         const hasNotificationDate = conf.notificationDate && conf.notificationDate !== '';
@@ -297,7 +302,7 @@ function renderConferences() {
                 <h3>${conf.name}</h3>
                 
                 <div class="conference-meta">
-                    <span class="conference-category">${categoryName}</span>
+                    <span class="conference-categories">${categoryNames}</span>
                     <span class="conference-status ${statusInfo.class}">${statusInfo.text}</span>
                 </div>
                 
@@ -359,13 +364,13 @@ function renderConferences() {
     }).join('');
 }
 
-// Open modal for adding
+// Update the openAddModal function
 function openAddModal() {
     editingIndex = -1;
     modalTitle.innerHTML = '<i class="fas fa-calendar-plus"></i> Add New Conference';
     form.reset();
+    clearSelectedCategories();
     
-    // Clear all date fields for new conference
     document.getElementById('submissionDate').value = '';
     document.getElementById('notificationDate').value = '';
     document.getElementById('conferenceStartDate').value = '';
@@ -374,7 +379,7 @@ function openAddModal() {
     modal.style.display = 'block';
 }
 
-// Open modal for editing
+// Update the editConference function
 function editConference(index) {
     editingIndex = index;
     const conf = conferences[index];
@@ -394,6 +399,38 @@ function editConference(index) {
     modal.style.display = 'block';
 }
 
+// Update the loadData function to load categories
+async function loadData() {
+    if (dataLoaded) {
+        console.log('Data already loaded, skipping...');
+        return;
+    }
+    
+    showNotification('Loading data...', 'info');
+    
+    // Always try to load from JSON file first
+    try {
+        await loadFromJSONFile();
+        dataLoaded = true;
+    } catch (error) {
+        console.log('Could not load from JSON file, using local data:', error);
+        // Fallback to localStorage
+        loadFromLocalStorage();
+        dataLoaded = true;
+    }
+    
+    // Load categories after loading conferences
+    loadCategories();
+    
+    updateStats();
+    renderConferences();
+}
+
+// Update the getCategoryName function to handle any category
+function getCategoryName(category) {
+    return category || 'Uncategorized';
+}
+
 // Delete conference
 function deleteConference(index) {
     if (confirm('Are you sure you want to delete this conference? This action cannot be undone.')) {
@@ -411,7 +448,7 @@ function closeModal() {
     editingIndex = -1;
 }
 
-// Handle form submission
+// Update the form submission handler
 function handleFormSubmit(e) {
     e.preventDefault();
     
@@ -420,7 +457,7 @@ function handleFormSubmit(e) {
         name: document.getElementById('confName').value.trim(),
         location: document.getElementById('confLocation').value.trim(),
         website: document.getElementById('confWebsite').value.trim(),
-        category: document.getElementById('confCategory').value,
+        categories: [...selectedCategories], // Store as array
         submissionDate: document.getElementById('submissionDate').value || '',
         notificationDate: document.getElementById('notificationDate').value || '',
         conferenceStartDate: document.getElementById('conferenceStartDate').value || '',
@@ -430,6 +467,11 @@ function handleFormSubmit(e) {
         updatedAt: new Date().toISOString()
     };
     
+    // Backward compatibility: keep single category for existing data
+    if (editingIndex !== -1 && conferences[editingIndex].category) {
+        conferenceData.category = conferences[editingIndex].category;
+    }
+    
     // Add createdAt for new conferences
     if (editingIndex === -1) {
         conferenceData.createdAt = new Date().toISOString();
@@ -437,7 +479,7 @@ function handleFormSubmit(e) {
         conferenceData.createdAt = conferences[editingIndex].createdAt;
     }
     
-    // Validate dates only if they are provided
+    // Validate dates...
     if (conferenceData.submissionDate && conferenceData.notificationDate) {
         if (new Date(conferenceData.submissionDate) > new Date(conferenceData.notificationDate)) {
             showNotification('Submission deadline must be before notification date!', 'error');
@@ -460,11 +502,9 @@ function handleFormSubmit(e) {
     }
     
     if (editingIndex === -1) {
-        // Add new conference
         conferences.push(conferenceData);
         showNotification('Conference added successfully!', 'success');
     } else {
-        // Update existing conference
         conferences[editingIndex] = conferenceData;
         showNotification('Conference updated successfully!', 'success');
     }
@@ -486,6 +526,7 @@ function closeJsonEditor() {
     jsonEditorModal.style.display = 'none';
 }
 
+// In the loadCurrentData function, ensure categories are included
 function loadCurrentData() {
     const jsonData = {
         version: "1.0",
@@ -528,6 +569,7 @@ function validateJson() {
     }
 }
 
+// In the saveJsonData function, reload categories after saving
 function saveJsonData() {
     if (!validateJson()) return;
     
@@ -536,6 +578,7 @@ function saveJsonData() {
         const jsonData = JSON.parse(editor.value);
         conferences = jsonData.conferences;
         saveData();
+        loadCategories(); // Reload categories after JSON import
         renderConferences();
         closeJsonEditor();
         showNotification('Data updated successfully!', 'success');
@@ -712,3 +755,149 @@ window.addEventListener('click', (e) => {
 
 // Initialize the app - Force reload from JSON on every page load
 forceReloadFromJSON();
+
+// Category management
+let categories = ['Computer Science', 'AI & Machine Learning', 'Data Science', 'Networking', 'Software Engineering', 'Other'];
+let selectedCategories = [];
+
+// Load categories from data
+function loadCategories() {
+    const categorySet = new Set();
+    conferences.forEach(conf => {
+        if (conf.categories && Array.isArray(conf.categories)) {
+            conf.categories.forEach(cat => {
+                if (cat && cat.trim() !== '') {
+                    categorySet.add(cat.trim());
+                }
+            });
+        }
+        // Backward compatibility: check old single category field
+        else if (conf.category && conf.category.trim() !== '') {
+            categorySet.add(conf.category.trim());
+        }
+    });
+    
+    // Add default categories if they don't exist
+    categories.forEach(cat => {
+        if (!categorySet.has(cat)) {
+            categorySet.add(cat);
+        }
+    });
+    
+    categories = Array.from(categorySet).sort();
+    updateCategorySuggestions();
+}
+
+// Update category suggestions
+function updateCategorySuggestions() {
+    const datalist = document.getElementById('categorySuggestions');
+    datalist.innerHTML = categories.map(category => 
+        `<option value="${category}">`
+    ).join('');
+}
+
+// Handle category input
+function setupCategoryInput() {
+    const categoryInput = document.getElementById('newCategoryInput');
+    const selectedContainer = document.getElementById('selectedCategories');
+    
+    categoryInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ',' || e.key === 'Tab') {
+            e.preventDefault();
+            addCategory(categoryInput.value.trim());
+            categoryInput.value = '';
+        }
+    });
+    
+    categoryInput.addEventListener('blur', () => {
+        if (categoryInput.value.trim()) {
+            addCategory(categoryInput.value.trim());
+            categoryInput.value = '';
+        }
+    });
+}
+
+// Add a category
+function addCategory(category) {
+    if (!category) return;
+    
+    // Clean up the category
+    category = category.replace(/,/g, '').trim();
+    
+    if (!category || selectedCategories.includes(category)) return;
+    
+    selectedCategories.push(category);
+    renderSelectedCategories();
+    
+    // Add to global categories if new
+    if (!categories.includes(category)) {
+        categories.push(category);
+        categories.sort();
+        updateCategorySuggestions();
+    }
+}
+
+// Remove a category
+function removeCategory(category) {
+    selectedCategories = selectedCategories.filter(cat => cat !== category);
+    renderSelectedCategories();
+}
+
+// Render selected categories
+function renderSelectedCategories() {
+    const container = document.getElementById('selectedCategories');
+    container.innerHTML = selectedCategories.map(category => `
+        <span class="category-tag">
+            ${category}
+            <span class="remove-category" onclick="removeCategory('${category.replace(/'/g, "\\'")}')">&times;</span>
+        </span>
+    `).join('');
+}
+
+// Clear selected categories
+function clearSelectedCategories() {
+    selectedCategories = [];
+    renderSelectedCategories();
+}
+
+// Update the editConference function
+function editConference(index) {
+    editingIndex = index;
+    const conf = conferences[index];
+    
+    modalTitle.innerHTML = '<i class="fas fa-edit"></i> Edit Conference';
+    document.getElementById('confName').value = conf.name;
+    document.getElementById('confLocation').value = conf.location;
+    document.getElementById('confWebsite').value = conf.website || '';
+    
+    // Handle categories - support both old and new format
+    selectedCategories = [];
+    if (conf.categories && Array.isArray(conf.categories)) {
+        selectedCategories = [...conf.categories];
+    } else if (conf.category) {
+        selectedCategories = [conf.category];
+    }
+    renderSelectedCategories();
+    
+    document.getElementById('submissionDate').value = conf.submissionDate || '';
+    document.getElementById('notificationDate').value = conf.notificationDate || '';
+    document.getElementById('conferenceStartDate').value = conf.conferenceStartDate || '';
+    document.getElementById('conferenceEndDate').value = conf.conferenceEndDate || '';
+    document.getElementById('confStatus').value = conf.status || 'planned';
+    document.getElementById('confNotes').value = conf.notes || '';
+    
+    modal.style.display = 'block';
+}
+
+// Update the getCategoryName function to handle multiple categories
+function getCategoryNames(categories) {
+    if (!categories || !Array.isArray(categories) || categories.length === 0) {
+        return 'Uncategorized';
+    }
+    return categories.join(', ');
+}
+
+// Initialize category input when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    setupCategoryInput();
+});

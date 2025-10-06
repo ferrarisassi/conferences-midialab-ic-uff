@@ -105,12 +105,15 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="confCategory">Category</label>
-                        <select id="confCategory">
-                            <option value="">Select Category</option>
-                            <option value="computer-science">Computer Science</option>
-                            <option value="other">Other</option>
-                        </select>
+                        <label for="confCategories">Categories</label>
+                        <div class="categories-input-container">
+                            <input type="text" id="newCategoryInput" placeholder="Type a category and press Enter or comma" list="categorySuggestions">
+                            <datalist id="categorySuggestions">
+                                <!-- Options will be populated dynamically -->
+                            </datalist>
+                        </div>
+                        <div id="selectedCategories" class="selected-categories"></div>
+                        <small class="help-text">Type categories and press Enter, comma, or Tab to add. Click × to remove.</small>
                     </div>
                     
                     <div class="form-row">
